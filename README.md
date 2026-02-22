@@ -137,6 +137,20 @@ Under `~/.agentgate/`:
 
 Events rotate at 50 MB with 3 retained files.
 
+## Expanded Guardrails
+
+This branch expands starter guardrails for additional high-risk operations across:
+
+- `kubectl` (force delete, wildcard delete, node drain)
+- `terraform` (destroy, apply destroy mode, state mutations)
+- `helm` (uninstall in prod)
+- `aws` (EC2 terminate, RDS delete, recursive S3 remove)
+- `gcloud` (project delete, cluster delete, compute delete confirm)
+
+Research notes and source links:
+
+- `docs/guardrails-research.md`
+
 ## Agent Stderr Contract
 
 For intercepted commands, AgentGate prints these to stderr:

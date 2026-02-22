@@ -164,6 +164,7 @@ func parseGCloud(ctx *CommandContext, args []string) {
 		ctx.ParseStatus = ParseStatusPartial
 		return
 	}
+
 	ctx.Resource = strings.ToLower(strings.Join(pos[:actionIdx], "/"))
 	ctx.Action = strings.ToLower(pos[actionIdx])
 	ctx.ActionType = classifyActionType("gcloud", ctx.Action)
@@ -328,7 +329,7 @@ func classifyActionType(tool, action string) string {
 	action = strings.ToLower(action)
 	readOps := map[string]bool{
 		"get": true, "describe": true, "list": true, "logs": true, "status": true, "show": true,
-		"version": true, "help": true, "diff": true, "log": true,
+		"version": true, "help": true, "diff": true, "log": true, "options": true,
 	}
 	writeOps := map[string]bool{
 		"apply": true, "patch": true, "upgrade": true, "install": true, "create": true, "update": true, "set": true,
@@ -340,7 +341,7 @@ func classifyActionType(tool, action string) string {
 	destructiveOps := map[string]bool{
 		"delete": true, "destroy": true, "terminate": true, "uninstall": true, "drain": true, "rm": true,
 		"force-unlock": true, "state-rm": true, "state-mv": true, "system-prune": true, "compose-down": true, "rm-force": true,
-		"reset-hard": true, "clean-force": true, "push-force": true,
+		"reset-hard": true, "clean-force": true, "push-force": true, "projects-delete": true,
 	}
 	if readOps[action] {
 		return "read"
