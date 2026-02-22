@@ -59,6 +59,9 @@ Expected: `~/.agentgate/bin/kubectl` appears before system kubectl.
 - `agentgate enforce`
 - `agentgate tail --env production --tool kubectl --decision deny`
 - `agentgate report --last 7d`
+- `agentgate metrics --last 24h --format prometheus`
+- `agentgate metrics --last 24h --format json`
+- `agentgate serve-metrics --addr 127.0.0.1:9765 --last 24h`
 - `agentgate allow-once <command-id>`
 - `agentgate uninstall`
 
@@ -125,6 +128,37 @@ Under `~/.agentgate/`:
 - `policies.yaml`
 
 Events rotate at 50 MB with 3 retained files.
+
+## Observability and Metrics
+
+This branch adds dashboard-friendly metrics for blocked/allowed behavior.
+
+### One-shot metrics output
+
+```bash
+agentgate metrics --last 24h --format prometheus
+agentgate metrics --last 24h --format json
+```
+
+### Metrics server for scraping
+
+```bash
+agentgate serve-metrics --addr 127.0.0.1:9765 --last 24h
+```
+
+Endpoints:
+
+- `GET /metrics` (Prometheus text format)
+- `GET /healthz`
+
+Exported metrics include:
+
+- `agentgate_commands_total{tool,environment,decision,mode}`
+- `agentgate_commands_blocked_total{tool,environment,policy}`
+- `agentgate_commands_allowed_total{tool,environment,outcome}`
+- `agentgate_parse_status_total{tool,parse_status}`
+- `agentgate_inflight_commands`
+- `agentgate_metrics_generated_unix`
 
 ## Agent Stderr Contract
 
