@@ -71,6 +71,12 @@ func parseTerraform(ctx *CommandContext, args []string) {
 		return
 	}
 	ctx.Action = action
+	if (action == "state" || action == "workspace") && len(args) > idx+1 {
+		sub := strings.ToLower(args[idx+1])
+		if !strings.HasPrefix(sub, "-") {
+			ctx.Action = action + "-" + sub
+		}
+	}
 	ctx.ActionType = classifyActionType("terraform", action)
 	parseNamespaceAndFlags(ctx, args)
 	for _, a := range args {
@@ -84,6 +90,12 @@ func parseTerraform(ctx *CommandContext, args []string) {
 	}
 	if len(args) > idx+1 {
 		ctx.Resource = strings.ToLower(args[idx+1])
+	}
+	if ctx.Action == "force-unlock" {
+		ctx.ActionType = "destructive"
+	}
+	if strings.HasPrefix(ctx.Action, "state-") {
+		ctx.ActionType = "destructive"
 	}
 	ctx.ParseStatus = ParseStatusPartial
 	if ctx.Action != "" {
@@ -133,16 +145,28 @@ func parseGCloud(ctx *CommandContext, args []string) {
 		ctx.ParseStatus = ParseStatusUnknown
 		return
 	}
-	ctx.Resource = strings.ToLower(pos[0])
-	if len(pos) > 1 {
-		ctx.Action = strings.ToLower(pos[1])
+	actionIdx := -1
+	for i := 1; i < len(pos); i++ {
+		if looksLikeActionToken(pos[i]) {
+			actionIdx = i
+			break
+		}
+	}
+	if actionIdx == -1 {
+		ctx.Resource = strings.ToLower(strings.Join(pos, "/"))
+		ctx.Action = strings.ToLower(pos[0])
 		ctx.ActionType = classifyActionType("gcloud", ctx.Action)
-		ctx.ParseStatus = ParseStatusParsed
+		ctx.ParseStatus = ParseStatusPartial
 		return
 	}
-	ctx.Action = ctx.Resource
+
+	ctx.Resource = strings.ToLower(strings.Join(pos[:actionIdx], "/"))
+	ctx.Action = strings.ToLower(pos[actionIdx])
 	ctx.ActionType = classifyActionType("gcloud", ctx.Action)
-	ctx.ParseStatus = ParseStatusPartial
+	if len(pos) > actionIdx+1 {
+		ctx.ResourceName = pos[actionIdx+1]
+	}
+	ctx.ParseStatus = ParseStatusParsed
 }
 
 func parseNamespaceAndFlags(ctx *CommandContext, args []string) {
@@ -186,7 +210,7 @@ func firstPositional(args []string) (string, int) {
 			continue
 		}
 		if strings.HasPrefix(a, "-") {
-			if a == "-n" || a == "--namespace" || a == "--profile" || a == "--project" || a == "--context" {
+			if consumesNextValueFlag(strings.TrimPrefix(a, "--")) || a == "-n" || a == "-f" || a == "-k" {
 				skipNext = true
 			}
 			continue
@@ -207,14 +231,14 @@ func collectPositionals(args []string) []string {
 		if strings.HasPrefix(a, "--") {
 			if !strings.Contains(a, "=") {
 				key := strings.TrimPrefix(a, "--")
-				if key == "namespace" || key == "profile" || key == "project" || key == "context" || key == "chdir" {
+				if consumesNextValueFlag(key) {
 					skipNext = true
 				}
 			}
 			continue
 		}
 		if strings.HasPrefix(a, "-") {
-			if a == "-n" {
+			if a == "-n" || a == "-f" || a == "-k" || a == "-c" {
 				skipNext = true
 			}
 			continue
@@ -240,13 +264,16 @@ func looksLikeScaleToZero(args []string) bool {
 func classifyActionType(tool, action string) string {
 	action = strings.ToLower(action)
 	readOps := map[string]bool{
-		"get": true, "describe": true, "list": true, "logs": true, "status": true, "show": true,
+		"get": true, "describe": true, "list": true, "logs": true, "status": true, "show": true, "version": true, "options": true,
 	}
 	writeOps := map[string]bool{
 		"apply": true, "patch": true, "upgrade": true, "install": true, "create": true, "update": true, "set": true,
+		"replace": true, "rollout": true, "restart": true, "label": true, "annotate": true, "cordon": true, "uncordon": true,
+		"enable": true, "disable": true, "start": true, "stop": true, "deploy": true,
 	}
 	destructiveOps := map[string]bool{
 		"delete": true, "destroy": true, "terminate": true, "uninstall": true, "drain": true, "rm": true,
+		"force-unlock": true, "state-rm": true, "state-mv": true, "projects-delete": true,
 	}
 	if readOps[action] {
 		return "read"
@@ -268,4 +295,39 @@ func classifyActionType(tool, action string) string {
 		}
 	}
 	return "other"
+}
+
+func consumesNextValueFlag(key string) bool {
+	switch strings.ToLower(strings.TrimSpace(key)) {
+	case "namespace", "profile", "project", "context", "chdir", "filename", "file", "kustomize", "cluster", "zone", "region", "name":
+		return true
+	default:
+		return false
+	}
+}
+
+func looksLikeActionToken(token string) bool {
+	t := strings.ToLower(token)
+	switch {
+	case strings.HasPrefix(t, "create"),
+		strings.HasPrefix(t, "update"),
+		strings.HasPrefix(t, "delete"),
+		strings.HasPrefix(t, "destroy"),
+		strings.HasPrefix(t, "patch"),
+		strings.HasPrefix(t, "set"),
+		strings.HasPrefix(t, "get"),
+		strings.HasPrefix(t, "list"),
+		strings.HasPrefix(t, "describe"),
+		strings.HasPrefix(t, "terminate"),
+		strings.HasPrefix(t, "deploy"),
+		strings.HasPrefix(t, "run"),
+		strings.HasPrefix(t, "enable"),
+		strings.HasPrefix(t, "disable"),
+		strings.HasPrefix(t, "start"),
+		strings.HasPrefix(t, "stop"),
+		strings.HasPrefix(t, "restart"):
+		return true
+	default:
+		return false
+	}
 }
