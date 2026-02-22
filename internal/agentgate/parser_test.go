@@ -250,7 +250,7 @@ func TestParseDocker(t *testing.T) {
 		{"run", []string{"run", "nginx"}, "run", "other", "run"},
 		{"ps", []string{"ps"}, "ps", "other", "ps"},
 		{"compose up", []string{"compose", "up", "-d"}, "compose-up", "write", "compose"},
-		{"empty", []string{}, "", "other", "", },
+		{"empty", []string{}, "", "other", ""},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

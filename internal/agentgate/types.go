@@ -68,15 +68,18 @@ type RequirePlanRule struct {
 }
 
 type PolicyMatch struct {
-	Tool         []string `yaml:"tool"`
-	Environment  []string `yaml:"environment"`
-	Action       []string `yaml:"action"`
-	ActionType   []string `yaml:"action_type"`
-	Resource     []string `yaml:"resource"`
-	ResourceName []string `yaml:"resource_name"`
-	Namespace    []string `yaml:"namespace"`
-	Flags        []string `yaml:"flags"`
-	RawContains  []string `yaml:"raw_contains"`
+	Tool           []string `yaml:"tool"`
+	Environment    []string `yaml:"environment"`
+	Action         []string `yaml:"action"`
+	ActionType     []string `yaml:"action_type"`
+	Resource       []string `yaml:"resource"`
+	ResourceName   []string `yaml:"resource_name"`
+	Namespace      []string `yaml:"namespace"`
+	Flags          []string `yaml:"flags"`
+	RawContains    []string `yaml:"raw_contains"`
+	MCPServer      []string `yaml:"mcp_server"`
+	MCPTool        []string `yaml:"mcp_tool"`
+	MCPArgsContain []string `yaml:"mcp_args_contain"`
 }
 
 type Config struct {

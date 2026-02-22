@@ -123,6 +123,15 @@ func policyMatchesContext(match PolicyMatch, ctx CommandContext) bool {
 	if len(match.RawContains) > 0 && !anyMatch(match.RawContains, ctx.RawCommand) {
 		return false
 	}
+	if len(match.MCPServer) > 0 && !anyMatch(match.MCPServer, ctx.Tool) {
+		return false
+	}
+	if len(match.MCPTool) > 0 && !anyMatch(match.MCPTool, ctx.Action) {
+		return false
+	}
+	if len(match.MCPArgsContain) > 0 && !anyMatch(match.MCPArgsContain, ctx.RawCommand) {
+		return false
+	}
 	return true
 }
 

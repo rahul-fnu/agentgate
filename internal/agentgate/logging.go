@@ -29,6 +29,7 @@ type StartEvent struct {
 	User        string      `json:"user"`
 	Interactive bool        `json:"interactive"`
 	Parse       ParseStatus `json:"parse"`
+	Source      string      `json:"source,omitempty"` // "cli" or "mcp"
 }
 
 type EndEvent struct {
