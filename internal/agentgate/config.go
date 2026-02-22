@@ -17,15 +17,16 @@ const (
 var tools = []string{"kubectl", "terraform", "helm", "aws", "gcloud", "git", "docker"}
 
 type Paths struct {
-	Root         string
-	BinDir       string
-	ConfigPath   string
-	PoliciesPath string
-	EventsPath   string
-	HistoryPath  string
-	BypassesPath string
-	CachePath    string
-	EventsLock   string
+	Root             string
+	BinDir           string
+	ConfigPath       string
+	PoliciesPath     string
+	EventsPath       string
+	HistoryPath      string
+	BypassesPath     string
+	CachePath        string
+	EventsLock       string
+	MCPOriginalsPath string
 }
 
 func ResolvePaths() (Paths, error) {
@@ -43,7 +44,8 @@ func ResolvePaths() (Paths, error) {
 		HistoryPath:  filepath.Join(root, "history.jsonl"),
 		BypassesPath: filepath.Join(root, "bypasses.jsonl"),
 		CachePath:    filepath.Join(root, "cache.json"),
-		EventsLock:   filepath.Join(root, ".events.lock"),
+		EventsLock:       filepath.Join(root, ".events.lock"),
+		MCPOriginalsPath: filepath.Join(root, "mcp_originals.json"),
 	}, nil
 }
 

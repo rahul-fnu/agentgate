@@ -49,6 +49,10 @@ func RunCLI(args []string) int {
 	case "mcp-proxy":
 		// Handled in main.go to avoid circular import with internal/mcp
 		return MCPProxyHandler(paths, args[1:])
+	case "mcp-wrap":
+		return cmdMCPWrap(paths, args[1:])
+	case "mcp-unwrap":
+		return cmdMCPUnwrap(paths, args[1:])
 	case "allow-once":
 		return cmdAllowOnce(paths, args[1:])
 	case "uninstall":
@@ -72,6 +76,8 @@ func printUsage() {
 	fmt.Println("  agentgate metrics [--last 24h] [--format prometheus|json]")
 	fmt.Println("  agentgate serve-metrics [--addr 127.0.0.1:9765] [--last 24h]")
 	fmt.Println("  agentgate mcp-proxy [--server-name NAME] -- <server-command> [args...]")
+	fmt.Println("  agentgate mcp-wrap [--settings <path>] [--dry-run]")
+	fmt.Println("  agentgate mcp-unwrap [--settings <path>]")
 	fmt.Println("  agentgate allow-once <command-id>")
 	fmt.Println("  agentgate uninstall")
 }

@@ -21,11 +21,31 @@ go build -o agentgate ./cmd/agentgate
 ./agentgate enforce
 ```
 
-### 2. Wrap an MCP Server
+### 2. Wrap MCP Servers
 
-Change your MCP client configuration to route through AgentGate:
+The easiest way to wrap all MCP servers is the `mcp-wrap` command:
 
-**Before** (Claude Code `settings.json`):
+```bash
+# Auto-wrap all MCP servers in ~/.claude/settings.json
+agentgate mcp-wrap
+
+# Preview changes without modifying files
+agentgate mcp-wrap --dry-run
+
+# Use a custom settings path
+agentgate mcp-wrap --settings /path/to/settings.json
+
+# Restore originals
+agentgate mcp-unwrap
+```
+
+This reads your Claude Code `settings.json`, wraps each MCP server with `agentgate mcp-proxy`, and saves a backup of the originals to `~/.agentgate/mcp_originals.json`.
+
+#### Manual wrapping
+
+You can also wrap servers manually by editing `settings.json`:
+
+**Before**:
 ```json
 {
   "mcpServers": {

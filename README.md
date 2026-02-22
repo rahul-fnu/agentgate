@@ -128,33 +128,16 @@ The MCP proxy intercepts tool calls between AI agents (Claude Code, Cursor, etc.
 
 ### Setup
 
-Wrap any MCP server by changing the command in your agent's config:
+Wrap all MCP servers with one command:
 
-**Before** (Claude Code `settings.json`):
-```json
-{
-  "mcpServers": {
-    "filesystem": {
-      "command": "npx",
-      "args": ["@modelcontextprotocol/server-filesystem", "/tmp"]
-    }
-  }
-}
+```bash
+agentgate mcp-wrap
 ```
 
-**After**:
-```json
-{
-  "mcpServers": {
-    "filesystem": {
-      "command": "agentgate",
-      "args": [
-        "mcp-proxy", "--server-name", "filesystem", "--",
-        "npx", "@modelcontextprotocol/server-filesystem", "/tmp"
-      ]
-    }
-  }
-}
+This auto-wraps every MCP server in `~/.claude/settings.json` with `agentgate mcp-proxy`. Use `--dry-run` to preview changes. To restore originals:
+
+```bash
+agentgate mcp-unwrap
 ```
 
 ### MCP Policies
@@ -261,6 +244,8 @@ Exposed metrics:
 | `agentgate serve-metrics --addr <host:port> --last <duration>` | HTTP metrics server |
 | `agentgate allow-once <command-id>` | Issue a one-time bypass token (5 min, 1 use) |
 | `agentgate mcp-proxy [--server-name X] -- <cmd> <args>` | Run MCP proxy |
+| `agentgate mcp-wrap [--settings X] [--dry-run]` | Auto-wrap all MCP servers in Claude Code settings |
+| `agentgate mcp-unwrap [--settings X]` | Restore original MCP server configs from backup |
 | `agentgate uninstall` | Remove shims |
 
 ## Policy Reference
