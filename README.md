@@ -1,6 +1,6 @@
 # AgentGate V1
 
-AgentGate is a local policy-enforcement shim for infra CLIs (`kubectl`, `terraform`, `helm`, `aws`, `gcloud`).
+AgentGate is a local policy-enforcement shim for infra and local-ops CLIs (`kubectl`, `terraform`, `helm`, `aws`, `gcloud`, `git`, `docker`).
 
 It wraps your CLI calls, evaluates YAML policies, and decides to:
 
@@ -59,12 +59,23 @@ Expected: `~/.agentgate/bin/kubectl` appears before system kubectl.
 - `agentgate enforce`
 - `agentgate tail --env production --tool kubectl --decision deny`
 - `agentgate report --last 7d`
+- `agentgate explain <tool> -- <args...>`
 - `agentgate allow-once <command-id>`
 - `agentgate uninstall`
 
 Hidden command used by shims:
 
 - `agentgate __intercept <tool> -- <args...>`
+
+## Standout Product Features (This Branch)
+
+- Expanded command surface to include `git` and `docker` safety controls.
+- New `agentgate explain` preflight simulator for "what would happen if this runs?"
+- New policy matching field `resource_name` for precise branch/resource-level controls.
+- Starter policy pack now includes developer workstation blast-radius guards:
+  - force-push protections
+  - hard-reset protections
+  - docker prune/compose teardown controls
 
 ## Safe Local Test (No Real Cluster Needed)
 
