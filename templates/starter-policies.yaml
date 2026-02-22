@@ -53,7 +53,7 @@ policies:
     suggestion: "Production write operation."
     match:
       environment: [production]
-      action: [apply, patch, upgrade]
+      action_type: [write]
 
   - name: prod-write-rate-limit
     priority: 95
@@ -76,3 +76,63 @@ policies:
       environment: [production]
     require_plan:
       window: 2h
+
+  - name: deny-git-force-push-protected
+    priority: 99
+    decision: deny
+    suggestion: "Force pushes to protected branches are blocked."
+    match:
+      tool: [git]
+      action: [push-force]
+      resource_name: [main, master, production, release, trunk]
+
+  - name: confirm-git-force-push
+    priority: 90
+    decision: confirm
+    suggestion: "Force pushes require explicit confirmation."
+    match:
+      tool: [git]
+      action: [push-force]
+
+  - name: deny-git-reset-hard-protected
+    priority: 96
+    decision: deny
+    suggestion: "Hard resets are blocked on protected branches."
+    match:
+      tool: [git]
+      action: [reset-hard]
+      raw_contains: [" main", " master", " production", " release", " trunk"]
+
+  - name: confirm-git-clean-force
+    priority: 90
+    decision: confirm
+    suggestion: "git clean with force can delete local work; confirmation required."
+    match:
+      tool: [git]
+      action: [clean-force]
+
+  - name: deny-docker-system-prune-destructive
+    priority: 97
+    decision: deny
+    suggestion: "docker system prune with image/volume cleanup is blocked by default."
+    match:
+      tool: [docker]
+      action: [system-prune]
+      flags: ["a", "all", "volumes", "--all", "--volumes"]
+
+  - name: confirm-docker-compose-down-volumes
+    priority: 90
+    decision: confirm
+    suggestion: "docker compose down --volumes requires confirmation."
+    match:
+      tool: [docker]
+      action: [compose-down]
+      flags: ["volumes", "--volumes"]
+
+  - name: confirm-docker-rm-force
+    priority: 88
+    decision: confirm
+    suggestion: "Forced container removal requires confirmation."
+    match:
+      tool: [docker]
+      action: [rm-force]

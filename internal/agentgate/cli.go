@@ -37,6 +37,8 @@ func RunCLI(args []string) int {
 		return cmdTail(paths, args[1:])
 	case "report":
 		return cmdReport(paths, args[1:])
+	case "explain":
+		return cmdExplain(paths, args[1:])
 	case "allow-once":
 		return cmdAllowOnce(paths, args[1:])
 	case "uninstall":
@@ -56,6 +58,7 @@ func printUsage() {
 	fmt.Println("  agentgate enforce")
 	fmt.Println("  agentgate tail [--env production] [--tool kubectl] [--decision deny] [--follow=true]")
 	fmt.Println("  agentgate report --last 7d")
+	fmt.Println("  agentgate explain <tool> -- <args...>")
 	fmt.Println("  agentgate allow-once <command-id>")
 	fmt.Println("  agentgate uninstall")
 }

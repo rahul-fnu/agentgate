@@ -97,6 +97,9 @@ func policyMatchesContext(match PolicyMatch, ctx CommandContext) bool {
 	if len(match.Resource) > 0 && !anyMatch(match.Resource, ctx.Resource) {
 		return false
 	}
+	if len(match.ResourceName) > 0 && !anyMatch(match.ResourceName, ctx.ResourceName) {
+		return false
+	}
 	if len(match.Namespace) > 0 && !anyMatch(match.Namespace, ctx.Namespace) {
 		return false
 	}
