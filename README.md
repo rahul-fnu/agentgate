@@ -60,6 +60,9 @@ Expected: `~/.agentgate/bin/kubectl` appears before system kubectl.
 - `agentgate tail --env production --tool kubectl --decision deny`
 - `agentgate report --last 7d`
 - `agentgate explain <tool> -- <args...>`
+- `agentgate metrics --last 24h --format prometheus`
+- `agentgate metrics --last 24h --format json`
+- `agentgate serve-metrics --addr 127.0.0.1:9765 --last 24h`
 - `agentgate allow-once <command-id>`
 - `agentgate uninstall`
 
@@ -139,17 +142,35 @@ Events rotate at 50 MB with 3 retained files.
 
 ## Expanded Guardrails
 
-This branch expands starter guardrails for additional high-risk operations across:
+Starter guardrails for high-risk operations across:
 
 - `kubectl` (force delete, wildcard delete, node drain)
 - `terraform` (destroy, apply destroy mode, state mutations)
 - `helm` (uninstall in prod)
 - `aws` (EC2 terminate, RDS delete, recursive S3 remove)
 - `gcloud` (project delete, cluster delete, compute delete confirm)
+- `git` (force-push, hard-reset, clean-force)
+- `docker` (system prune, compose down, rm force)
 
-Research notes and source links:
+## Observability and Metrics
 
-- `docs/guardrails-research.md`
+### One-shot metrics output
+
+```bash
+agentgate metrics --last 24h --format prometheus
+agentgate metrics --last 24h --format json
+```
+
+### Metrics server for scraping
+
+```bash
+agentgate serve-metrics --addr 127.0.0.1:9765 --last 24h
+```
+
+Endpoints:
+
+- `GET /metrics` (Prometheus text format)
+- `GET /healthz`
 
 ## Agent Stderr Contract
 
