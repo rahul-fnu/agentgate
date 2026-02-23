@@ -277,7 +277,7 @@ Exposed metrics:
     limit: 5
     window: 10m
 
-# Require terraform plan before apply
+# Require terraform plan before apply (window = how recent the plan must be)
 - name: require-plan-before-apply
   priority: 95
   decision: deny
@@ -286,9 +286,7 @@ Exposed metrics:
     tool: [terraform]
     action: [apply]
   require_plan:
-    tool: terraform
-    action: plan
-    max_age: 30m
+    window: 30m
 ```
 
 ### Pattern matching
