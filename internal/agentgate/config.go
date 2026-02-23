@@ -14,7 +14,7 @@ const (
 	eventsRotateKeep = 3
 )
 
-var tools = []string{"kubectl", "terraform", "helm", "aws", "gcloud", "git", "docker"}
+var tools = []string{"kubectl", "terraform", "helm", "aws", "gcloud", "git", "docker", "bash", "sh"}
 
 type Paths struct {
 	Root             string
