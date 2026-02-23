@@ -297,4 +297,39 @@ const starterPoliciesYAML = `policies:
     match:
       tool: [docker]
       action: [rm-force]
+
+  # ── bash / sh ────────────────────────────────────────────────────────────────
+
+  - name: deny-bash-rm-recursive
+    priority: 100
+    decision: deny
+    suggestion: "Recursive deletion via bash is blocked. Delete specific files instead."
+    match:
+      tool: [bash, sh]
+      action: [rm]
+      raw_contains: ["-r"]
+
+  - name: deny-bash-pipe-to-shell
+    priority: 100
+    decision: deny
+    suggestion: "Piping network content to a shell interpreter is blocked (curl|sh, wget|bash, etc.)."
+    match:
+      tool: [bash, sh]
+      raw_contains: ["| sh", "|sh", "| bash", "|bash", "| zsh", "|zsh"]
+
+  - name: confirm-bash-rm
+    priority: 90
+    decision: confirm
+    suggestion: "File deletion via bash requires confirmation."
+    match:
+      tool: [bash, sh]
+      action: [rm]
+
+  - name: warn-bash-network
+    priority: 80
+    decision: warn
+    suggestion: "Network command via bash detected."
+    match:
+      tool: [bash, sh]
+      action: [curl, wget]
 `

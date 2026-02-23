@@ -33,6 +33,8 @@ func ParseCommand(tool string, args []string, cwd string, interactive bool) Comm
 		parseGit(&ctx, args)
 	case "docker":
 		parseDocker(&ctx, args)
+	case "bash", "sh":
+		parseBash(&ctx, args)
 	default:
 		ctx.ParseStatus = ParseStatusUnknown
 	}
@@ -329,6 +331,56 @@ func looksLikeScaleToZero(args []string) bool {
 		}
 	}
 	return false
+}
+
+func parseBash(ctx *CommandContext, args []string) {
+	// Look for -c flag, which passes a command string to execute
+	for i, arg := range args {
+		if arg == "-c" && i+1 < len(args) {
+			inner := strings.TrimSpace(args[i+1])
+			if inner == "" {
+				ctx.ParseStatus = ParseStatusPartial
+				return
+			}
+			// Extract the first word as the command being run inside bash
+			fields := strings.Fields(inner)
+			if len(fields) > 0 {
+				ctx.Action = filepath.Base(fields[0])
+				ctx.ActionType = classifyBashSubcommand(ctx.Action, inner)
+			}
+			ctx.ParseStatus = ParseStatusParsed
+			return
+		}
+		// First non-flag argument is a script file name
+		if !strings.HasPrefix(arg, "-") {
+			ctx.Action = filepath.Base(arg)
+			ctx.ActionType = "other"
+			ctx.ParseStatus = ParseStatusParsed
+			return
+		}
+	}
+	// No -c and no script (flags only or interactive) — pass through without policy
+	ctx.ParseStatus = ParseStatusPartial
+}
+
+// classifyBashSubcommand classifies the action type for commands run inside bash -c "..."
+func classifyBashSubcommand(cmd, _ string) string {
+	switch strings.ToLower(cmd) {
+	case "rm", "rmdir", "shred", "unlink":
+		return "destructive"
+	case "kill", "killall", "pkill", "dd":
+		return "destructive"
+	case "mv", "cp", "chmod", "chown", "chgrp", "ln", "mkdir", "touch":
+		return "write"
+	case "curl", "wget", "ssh", "scp", "rsync", "nc", "netcat":
+		return "write"
+	case "sudo", "su":
+		return "write"
+	case "cat", "ls", "echo", "grep", "find", "head", "tail", "less", "more", "wc":
+		return "read"
+	default:
+		return "other"
+	}
 }
 
 func classifyActionType(tool, action string) string {
