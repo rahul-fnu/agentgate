@@ -1,0 +1,26 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "agentgate",
+      "args": [
+        "mcp-proxy",
+        "--server-name", "filesystem",
+        "--",
+        "npx",
+        "@modelcontextprotocol/server-filesystem",
+        "/tmp"
+      ]
+    },
+    "postgres": {
+      "command": "agentgate",
+      "args": [
+        "mcp-proxy",
+        "--server-name", "postgres",
+        "--",
+        "npx",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://localhost/mydb"
+      ]
+    }
+  }
+}

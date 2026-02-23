@@ -14,18 +14,18 @@ const (
 	eventsRotateKeep = 3
 )
 
-var tools = []string{"kubectl", "terraform", "helm", "aws", "gcloud"}
+var tools = []string{"kubectl", "terraform", "helm", "aws", "gcloud", "git", "docker"}
 
 type Paths struct {
-	Root         string
-	BinDir       string
-	ConfigPath   string
-	PoliciesPath string
-	EventsPath   string
-	HistoryPath  string
-	BypassesPath string
-	CachePath    string
-	EventsLock   string
+	Root             string
+	BinDir           string
+	ConfigPath       string
+	PoliciesPath     string
+	EventsPath       string
+	BypassesPath     string
+	CachePath        string
+	EventsLock       string
+	MCPOriginalsPath string
 }
 
 func ResolvePaths() (Paths, error) {
@@ -35,15 +35,15 @@ func ResolvePaths() (Paths, error) {
 	}
 	root := filepath.Join(home, ".agentgate")
 	return Paths{
-		Root:         root,
-		BinDir:       filepath.Join(root, "bin"),
-		ConfigPath:   filepath.Join(root, "config.yaml"),
-		PoliciesPath: filepath.Join(root, "policies.yaml"),
-		EventsPath:   filepath.Join(root, "events.jsonl"),
-		HistoryPath:  filepath.Join(root, "history.jsonl"),
-		BypassesPath: filepath.Join(root, "bypasses.jsonl"),
-		CachePath:    filepath.Join(root, "cache.json"),
-		EventsLock:   filepath.Join(root, ".events.lock"),
+		Root:             root,
+		BinDir:           filepath.Join(root, "bin"),
+		ConfigPath:       filepath.Join(root, "config.yaml"),
+		PoliciesPath:     filepath.Join(root, "policies.yaml"),
+		EventsPath:       filepath.Join(root, "events.jsonl"),
+		BypassesPath:     filepath.Join(root, "bypasses.jsonl"),
+		CachePath:        filepath.Join(root, "cache.json"),
+		EventsLock:       filepath.Join(root, ".events.lock"),
+		MCPOriginalsPath: filepath.Join(root, "mcp_originals.json"),
 	}, nil
 }
 
@@ -122,6 +122,24 @@ func LoadPolicies(paths Paths) ([]Policy, error) {
 	var pf PolicyFile
 	if err := yaml.Unmarshal(b, &pf); err != nil {
 		return nil, fmt.Errorf("parse policies: %w", err)
+	}
+	for i := range pf.Policies {
+		m := &pf.Policies[i].Match
+		if len(m.MCPServer) > 0 {
+			fmt.Fprintf(os.Stderr, "agentgate: policy %q uses deprecated mcp_server field; use tool instead\n", pf.Policies[i].Name)
+			m.Tool = append(m.Tool, m.MCPServer...)
+			m.MCPServer = nil
+		}
+		if len(m.MCPTool) > 0 {
+			fmt.Fprintf(os.Stderr, "agentgate: policy %q uses deprecated mcp_tool field; use action instead\n", pf.Policies[i].Name)
+			m.Action = append(m.Action, m.MCPTool...)
+			m.MCPTool = nil
+		}
+		if len(m.MCPArgsContain) > 0 {
+			fmt.Fprintf(os.Stderr, "agentgate: policy %q uses deprecated mcp_args_contain field; use raw_contains instead\n", pf.Policies[i].Name)
+			m.RawContains = append(m.RawContains, m.MCPArgsContain...)
+			m.MCPArgsContain = nil
+		}
 	}
 	return pf.Policies, nil
 }

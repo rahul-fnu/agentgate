@@ -5,7 +5,12 @@ import (
 	"os"
 
 	"agentgate/internal/agentgate"
+	"agentgate/internal/mcp"
 )
+
+func init() {
+	agentgate.MCPProxyHandler = runMCPProxy
+}
 
 func main() {
 	if len(os.Args) < 2 {
@@ -37,4 +42,19 @@ func runIntercept(args []string) int {
 		return 1
 	}
 	return agentgate.Intercept(paths, tool, raw)
+}
+
+func runMCPProxy(paths agentgate.Paths, args []string) int {
+	serverName, serverCmd, serverArgs, err := mcp.ParseProxyArgs(args)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "agentgate mcp-proxy: %v\n", err)
+		return 1
+	}
+	config := mcp.ProxyConfig{
+		Paths:      paths,
+		ServerCmd:  serverCmd,
+		ServerArgs: serverArgs,
+		ServerName: serverName,
+	}
+	return mcp.RunProxy(config)
 }

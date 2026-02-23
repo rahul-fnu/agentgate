@@ -13,6 +13,9 @@ import (
 	"time"
 )
 
+// MCPProxyHandler is set by main.go to avoid circular imports with internal/mcp.
+var MCPProxyHandler func(paths Paths, args []string) int
+
 func RunCLI(args []string) int {
 	if len(args) == 0 {
 		printUsage()
@@ -37,6 +40,19 @@ func RunCLI(args []string) int {
 		return cmdTail(paths, args[1:])
 	case "report":
 		return cmdReport(paths, args[1:])
+	case "explain":
+		return cmdExplain(paths, args[1:])
+	case "metrics":
+		return cmdMetrics(paths, args[1:])
+	case "serve-metrics":
+		return cmdServeMetrics(paths, args[1:])
+	case "mcp-proxy":
+		// Handled in main.go to avoid circular import with internal/mcp
+		return MCPProxyHandler(paths, args[1:])
+	case "mcp-wrap":
+		return cmdMCPWrap(paths, args[1:])
+	case "mcp-unwrap":
+		return cmdMCPUnwrap(paths, args[1:])
 	case "allow-once":
 		return cmdAllowOnce(paths, args[1:])
 	case "uninstall":
@@ -56,6 +72,12 @@ func printUsage() {
 	fmt.Println("  agentgate enforce")
 	fmt.Println("  agentgate tail [--env production] [--tool kubectl] [--decision deny] [--follow=true]")
 	fmt.Println("  agentgate report --last 7d")
+	fmt.Println("  agentgate explain <tool> -- <args...>")
+	fmt.Println("  agentgate metrics [--last 24h] [--format prometheus|json]")
+	fmt.Println("  agentgate serve-metrics [--addr 127.0.0.1:9765] [--last 24h]")
+	fmt.Println("  agentgate mcp-proxy [--server-name NAME] -- <server-command> [args...]")
+	fmt.Println("  agentgate mcp-wrap [--settings <path>] [--dry-run]")
+	fmt.Println("  agentgate mcp-unwrap [--settings <path>]")
 	fmt.Println("  agentgate allow-once <command-id>")
 	fmt.Println("  agentgate uninstall")
 }
