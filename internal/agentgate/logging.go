@@ -19,10 +19,13 @@ type StartEvent struct {
 	Phase       string      `json:"phase"`
 	Mode        Mode        `json:"mode"`
 	Tool        string      `json:"tool"`
+	Action      string      `json:"action"`
+	ActionType  string      `json:"action_type"`
 	Cmd         string      `json:"cmd"`
 	CmdHash     string      `json:"cmd_hash"`
 	Env         string      `json:"env"`
 	EnvReason   string      `json:"env_reason"`
+	WorkingDir  string      `json:"working_dir,omitempty"`
 	Decision    Decision    `json:"decision"`
 	Policy      string      `json:"policy"`
 	Risk        int         `json:"risk"`
@@ -48,9 +51,6 @@ func AppendEvent(paths Paths, payload any) error {
 	return appendJSONL(paths.EventsPath, payload)
 }
 
-func AppendHistory(paths Paths, payload HistoryRecord) error {
-	return appendJSONL(paths.HistoryPath, payload)
-}
 
 func appendJSONL(path string, payload any) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {

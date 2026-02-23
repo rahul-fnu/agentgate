@@ -33,7 +33,7 @@ go tool cover -html=coverage.out
 | `policy_test.go` | 15 cases | `policyMatchesContext` (all match fields including ResourceName), priority resolution, tie-breaking, rate limits, require-plan, `baseRisk`, `scoreRisk`, `restrictiveness`, unknown env defaults |
 | `config_test.go` | 10 cases | `LoadConfig` (missing, valid, invalid mode, malformed YAML), `SaveConfig`, `EnsureConfig`, `LoadPolicies` (missing, starter, malformed), `EnsureDirs` |
 | `bypass_test.go` | 5 cases | `IssueBypass`, `ConsumeValidBypass`, double-consume prevention, expiry, wrong hash |
-| `logging_test.go` | 7 cases | `AppendEvent`, multiple events, `ReadLastLines`, `FindStartEventByID`, `AppendHistory` |
+| `logging_test.go` | 7 cases | `AppendEvent`, multiple events, `ReadLastLines`, `FindStartEventByID`, `StartEvent` action fields |
 | `environment_test.go` | 12 cases | `classifyEnvironment` for all pattern types, unknown tool detection, git/docker (no env) |
 | `evaluate_test.go` | 4 cases | `EvaluateCommand` integration (basic allow, with policies, fail-open, starter policies) |
 | `metrics_test.go` | 6 cases | `CollectMetrics` (empty, with events, in-flight, filter by time), Prometheus format, JSON format |
@@ -66,7 +66,6 @@ func testPaths(t *testing.T) Paths {
         ConfigPath:   filepath.Join(dir, "config.yaml"),
         PoliciesPath: filepath.Join(dir, "policies.yaml"),
         EventsPath:   filepath.Join(dir, "events.jsonl"),
-        HistoryPath:  filepath.Join(dir, "history.jsonl"),
         BypassesPath: filepath.Join(dir, "bypasses.jsonl"),
         CachePath:    filepath.Join(dir, "cache.json"),
         EventsLock:   filepath.Join(dir, ".events.lock"),

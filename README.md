@@ -152,8 +152,8 @@ policies:
     decision: deny
     suggestion: "File deletion through MCP is blocked."
     match:
-      mcp_server: ["filesystem"]
-      mcp_tool: ["delete_file", "remove_file"]
+      tool: ["filesystem"]
+      action: ["delete_file", "remove_file"]
 
   # Block destructive SQL through MCP
   - name: block-mcp-destructive-sql
@@ -161,9 +161,9 @@ policies:
     decision: deny
     suggestion: "Destructive SQL via MCP is blocked."
     match:
-      mcp_server: ["postgres"]
-      mcp_tool: ["execute_query"]
-      mcp_args_contain: ["DROP", "TRUNCATE", "DELETE FROM"]
+      tool: ["postgres"]
+      action: ["execute_query"]
+      raw_contains: ["DROP", "TRUNCATE", "DELETE FROM"]
 
   # Warn on any MCP write operation
   - name: warn-mcp-writes
@@ -262,10 +262,7 @@ Exposed metrics:
 | `resource_name` | Parsed resource name | N/A |
 | `namespace` | `-n` / `--namespace` flag | N/A |
 | `flags` | Parsed CLI flags | N/A |
-| `raw_contains` | Full command string | N/A |
-| `mcp_server` | N/A | MCP server name |
-| `mcp_tool` | N/A | MCP tool name |
-| `mcp_args_contain` | N/A | MCP argument values |
+| `raw_contains` | Full command string | MCP argument values |
 
 ### Advanced rules
 

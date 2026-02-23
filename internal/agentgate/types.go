@@ -77,8 +77,11 @@ type PolicyMatch struct {
 	Namespace      []string `yaml:"namespace"`
 	Flags          []string `yaml:"flags"`
 	RawContains    []string `yaml:"raw_contains"`
-	MCPServer      []string `yaml:"mcp_server"`
-	MCPTool        []string `yaml:"mcp_tool"`
+	// Deprecated: use Tool instead. Normalized to Tool on load.
+	MCPServer []string `yaml:"mcp_server"`
+	// Deprecated: use Action instead. Normalized to Action on load.
+	MCPTool []string `yaml:"mcp_tool"`
+	// Deprecated: use RawContains instead. Normalized to RawContains on load.
 	MCPArgsContain []string `yaml:"mcp_args_contain"`
 }
 

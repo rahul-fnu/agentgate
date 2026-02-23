@@ -1,6 +1,31 @@
 package agentgate
 
 const starterPoliciesYAML = `policies:
+  - name: allow-test-namespace
+    priority: 110
+    decision: allow
+    suggestion: "Allowed: target namespace is a test namespace."
+    match:
+      tool: [kubectl, helm]
+      environment: [production]
+      namespace: ["test*", "*test"]
+
+  - name: allow-test-resource-name
+    priority: 110
+    decision: allow
+    suggestion: "Allowed: target resource is a test resource."
+    match:
+      environment: [production]
+      resource_name: ["test*", "*test"]
+
+  - name: allow-test-resource
+    priority: 110
+    decision: allow
+    suggestion: "Allowed: target resource is a test resource."
+    match:
+      environment: [production]
+      resource: ["test*", "*test"]
+
   - name: no-prod-namespace-delete
     priority: 100
     decision: deny

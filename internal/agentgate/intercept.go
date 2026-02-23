@@ -117,10 +117,13 @@ func Intercept(paths Paths, tool string, args []string) int {
 		Phase:       "start",
 		Mode:        mode,
 		Tool:        tool,
+		Action:      ctx.Action,
+		ActionType:  ctx.ActionType,
 		Cmd:         ctx.RawCommand,
 		CmdHash:     cmdHash,
 		Env:         ctx.Environment,
 		EnvReason:   ctx.EnvReason,
+		WorkingDir:  ctx.WorkingDir,
 		Decision:    result.Decision,
 		Policy:      result.PolicyName,
 		Risk:        result.Risk,
@@ -129,16 +132,6 @@ func Intercept(paths Paths, tool string, args []string) int {
 		Parse:       ctx.ParseStatus,
 	}
 	_ = AppendEvent(paths, startEvent)
-	_ = AppendHistory(paths, HistoryRecord{
-		TS:         startEvent.TS,
-		ID:         commandID,
-		Tool:       ctx.Tool,
-		Action:     ctx.Action,
-		ActionType: ctx.ActionType,
-		Env:        ctx.Environment,
-		WorkingDir: ctx.WorkingDir,
-		Decision:   result.Decision,
-	})
 
 	printContract(result, ctx, commandID, confirmRequired)
 

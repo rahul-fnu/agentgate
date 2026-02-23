@@ -18,7 +18,6 @@ func testPaths(t *testing.T) agentgate.Paths {
 		ConfigPath:   filepath.Join(dir, "config.yaml"),
 		PoliciesPath: filepath.Join(dir, "policies.yaml"),
 		EventsPath:   filepath.Join(dir, "events.jsonl"),
-		HistoryPath:  filepath.Join(dir, "history.jsonl"),
 		BypassesPath: filepath.Join(dir, "bypasses.jsonl"),
 		CachePath:    filepath.Join(dir, "cache.json"),
 		EventsLock:   filepath.Join(dir, ".events.lock"),
@@ -145,8 +144,8 @@ func TestEvaluateToolCall_DenyWithPolicy(t *testing.T) {
     decision: deny
     suggestion: "File deletion blocked"
     match:
-      mcp_server: ["filesystem"]
-      mcp_tool: ["delete_file"]
+      tool: ["filesystem"]
+      action: ["delete_file"]
 `
 	os.WriteFile(paths.PoliciesPath, []byte(policyYAML), 0o644)
 
@@ -169,9 +168,9 @@ func TestEvaluateToolCall_MCPArgsContain(t *testing.T) {
     decision: deny
     suggestion: "Destructive SQL blocked"
     match:
-      mcp_server: ["postgres"]
-      mcp_tool: ["execute_query"]
-      mcp_args_contain: ["DROP", "TRUNCATE"]
+      tool: ["postgres"]
+      action: ["execute_query"]
+      raw_contains: ["DROP", "TRUNCATE"]
 `
 	os.WriteFile(paths.PoliciesPath, []byte(policyYAML), 0o644)
 
@@ -220,8 +219,8 @@ func TestHandleToolsCall_Block(t *testing.T) {
     decision: deny
     suggestion: "Blocked"
     match:
-      mcp_server: ["filesystem"]
-      mcp_tool: ["delete_file"]
+      tool: ["filesystem"]
+      action: ["delete_file"]
 `
 	os.WriteFile(paths.PoliciesPath, []byte(policyYAML), 0o644)
 
@@ -292,8 +291,8 @@ func TestHandleToolsCall_ObserveMode(t *testing.T) {
     decision: deny
     suggestion: "Blocked"
     match:
-      mcp_server: ["filesystem"]
-      mcp_tool: ["delete_file"]
+      tool: ["filesystem"]
+      action: ["delete_file"]
 `
 	os.WriteFile(paths.PoliciesPath, []byte(policyYAML), 0o644)
 

@@ -26,17 +26,17 @@ func TestE2E_MCPPolicyEvaluation(t *testing.T) {
     decision: deny
     suggestion: "File deletion via MCP is blocked."
     match:
-      mcp_server: ["filesystem"]
-      mcp_tool: ["delete_file", "remove_file"]
+      tool: ["filesystem"]
+      action: ["delete_file", "remove_file"]
 
   - name: block-destructive-sql
     priority: 100
     decision: deny
     suggestion: "Destructive SQL via MCP is blocked."
     match:
-      mcp_server: ["postgres"]
-      mcp_tool: ["execute_query"]
-      mcp_args_contain: ["DROP", "TRUNCATE"]
+      tool: ["postgres"]
+      action: ["execute_query"]
+      raw_contains: ["DROP", "TRUNCATE"]
 
   - name: warn-mcp-writes
     priority: 50
@@ -157,8 +157,8 @@ func TestE2E_MCPBlockedResponse(t *testing.T) {
     decision: deny
     suggestion: "Deletion blocked by policy."
     match:
-      mcp_server: ["filesystem"]
-      mcp_tool: ["delete_file"]
+      tool: ["filesystem"]
+      action: ["delete_file"]
 `
 	os.WriteFile(paths.PoliciesPath, []byte(policyYAML), 0o644)
 
@@ -233,8 +233,8 @@ func TestE2E_MCPObserveMode(t *testing.T) {
     decision: deny
     suggestion: "Blocked"
     match:
-      mcp_server: ["filesystem"]
-      mcp_tool: ["delete_file"]
+      tool: ["filesystem"]
+      action: ["delete_file"]
 `
 	os.WriteFile(paths.PoliciesPath, []byte(policyYAML), 0o644)
 
@@ -275,8 +275,8 @@ func TestE2E_MCPEnforceMode(t *testing.T) {
     decision: deny
     suggestion: "Blocked"
     match:
-      mcp_server: ["filesystem"]
-      mcp_tool: ["delete_file"]
+      tool: ["filesystem"]
+      action: ["delete_file"]
 `
 	os.WriteFile(paths.PoliciesPath, []byte(policyYAML), 0o644)
 
@@ -331,8 +331,8 @@ func TestE2E_MCPEventLogging(t *testing.T) {
     decision: deny
     suggestion: "Blocked"
     match:
-      mcp_server: ["filesystem"]
-      mcp_tool: ["delete_file"]
+      tool: ["filesystem"]
+      action: ["delete_file"]
 `
 	os.WriteFile(paths.PoliciesPath, []byte(policyYAML), 0o644)
 

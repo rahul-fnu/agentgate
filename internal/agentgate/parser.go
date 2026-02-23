@@ -57,6 +57,12 @@ func parseKubectl(ctx *CommandContext, args []string) {
 	if len(next) > 1 {
 		ctx.ResourceName = next[1]
 	}
+	// Split type/name shorthand (e.g., deployment/test-web → resource=deployment, resource_name=test-web)
+	if ctx.ResourceName == "" && strings.Contains(ctx.Resource, "/") {
+		parts := strings.SplitN(ctx.Resource, "/", 2)
+		ctx.Resource = parts[0]
+		ctx.ResourceName = parts[1]
+	}
 	parseNamespaceAndFlags(ctx, args)
 	if action == "scale" && looksLikeScaleToZero(args) {
 		ctx.ActionType = "destructive"

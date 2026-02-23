@@ -63,8 +63,7 @@ When a user runs `kubectl delete namespace foo`:
 
 - `config.yaml` — mode (observe/enforce), unknown_env_default_decision
 - `policies.yaml` — YAML rules
-- `events.jsonl` — append-only event log (start/end pairs)
-- `history.jsonl` — used for rate-limit and require-plan checks
+- `events.jsonl` — append-only event log (start/end pairs); also used for rate-limit and require-plan checks
 - `bypasses.jsonl` — bypass token records
 - `cache.json` — environment detection cache
 - `bin/` — shim scripts for each wrapped CLI tool
@@ -74,7 +73,7 @@ When a user runs `kubectl delete namespace foo`:
 Policies match on: `tool`, `environment`, `action`, `action_type`, `resource`, `namespace`, `flags`, `raw_contains`. Non-wildcard patterns use substring matching; wildcards use `filepath.Match` semantics (e.g., `*prod*`). The highest-priority matching policy wins.
 
 Advanced rule types:
-- **rate_limit** — count writes/destructive ops in a time window (uses `history.jsonl`)
+- **rate_limit** — count writes/destructive ops in a time window (reads from `events.jsonl`)
 - **require_plan** — require a recent `terraform plan` before `terraform apply`
 
 ### Stderr Contract

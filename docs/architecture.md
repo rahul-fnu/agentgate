@@ -62,7 +62,7 @@ JSON-RPC message: {"method": "tools/call", "params": {"name": "delete_file", ...
          │
          ├── mcp/policy.go: EvaluateToolCall()
          │     Constructs CommandContext from MCP tool call
-         │     Maps mcp_server → Tool, mcp_tool → Action
+         │     Maps server name → Tool, tool name → Action
          │     Evaluates against same policy engine
          │
          ├── If DENIED:
@@ -131,9 +131,8 @@ agentgate/
 │   └── docker
 ├── config.yaml             # Mode (observe/enforce), patterns
 ├── policies.yaml           # YAML policy rules
-├── events.jsonl            # Append-only event log (start/end pairs)
+├── events.jsonl            # Append-only event log; also used for rate-limit/require-plan checks
 ├── events.jsonl.1          # Rotated files (50MB threshold)
-├── history.jsonl            # Rate-limit/require-plan checks
 ├── bypasses.jsonl           # Bypass token records
 └── cache.json               # Environment detection cache (30s TTL)
 ```
@@ -152,18 +151,15 @@ Policies are evaluated in this order:
 
 | Field | CLI Source | MCP Source |
 |-------|-----------|------------|
-| `tool` | CLI tool name | `mcp_server` name |
-| `action` | Parsed action verb | `mcp_tool` name |
+| `tool` | CLI tool name | MCP server name |
+| `action` | Parsed action verb | MCP tool name |
 | `action_type` | Classified: read/write/destructive/other | Classified from tool name |
 | `environment` | Detected from kubeconfig/workspace/profile | Not available (empty) |
 | `resource` | Parsed resource type | N/A |
 | `resource_name` | Parsed resource name | N/A |
 | `namespace` | `-n` / `--namespace` flag | N/A |
-| `flags` | Parsed CLI flags | MCP arguments as flags |
-| `raw_contains` | Full command string | Tool arguments |
-| `mcp_server` | N/A | MCP server name |
-| `mcp_tool` | N/A | MCP tool name |
-| `mcp_args_contain` | N/A | MCP arguments string |
+| `flags` | Parsed CLI flags | N/A |
+| `raw_contains` | Full command string | MCP argument values |
 
 ## Risk Scoring
 

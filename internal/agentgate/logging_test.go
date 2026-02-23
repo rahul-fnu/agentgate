@@ -149,25 +149,29 @@ func TestFindStartEventByID_NotFound(t *testing.T) {
 	}
 }
 
-func TestAppendHistory(t *testing.T) {
+func TestStartEventHasActionFields(t *testing.T) {
 	paths := testPaths(t)
 	os.MkdirAll(paths.Root, 0o755)
 
-	rec := HistoryRecord{
+	ev := StartEvent{
 		TS:         time.Now().UTC(),
 		ID:         "ag_hist1",
+		Phase:      "start",
 		Tool:       "kubectl",
 		Action:     "delete",
 		ActionType: "destructive",
 		Env:        "production",
 		Decision:   DecisionDeny,
 	}
-	if err := AppendHistory(paths, rec); err != nil {
-		t.Fatalf("append history: %v", err)
+	if err := AppendEvent(paths, ev); err != nil {
+		t.Fatalf("append event: %v", err)
 	}
 
-	b, _ := os.ReadFile(paths.HistoryPath)
+	b, _ := os.ReadFile(paths.EventsPath)
 	if !strings.Contains(string(b), "ag_hist1") {
-		t.Error("history record should be written")
+		t.Error("start event should be written to events.jsonl")
+	}
+	if !strings.Contains(string(b), `"action":"delete"`) {
+		t.Error("start event should contain action field")
 	}
 }

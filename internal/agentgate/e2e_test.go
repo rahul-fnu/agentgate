@@ -3,6 +3,7 @@ package agentgate
 import (
 	"encoding/json"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -164,20 +165,6 @@ func TestE2E_EventLoggingPipeline(t *testing.T) {
 	}
 	if err := AppendEvent(paths, endEv); err != nil {
 		t.Fatalf("AppendEvent end: %v", err)
-	}
-
-	// Log history
-	histRec := HistoryRecord{
-		TS:         time.Now().UTC(),
-		ID:         commandID,
-		Tool:       "kubectl",
-		Action:     "delete",
-		ActionType: "destructive",
-		Env:        "production",
-		Decision:   DecisionDeny,
-	}
-	if err := AppendHistory(paths, histRec); err != nil {
-		t.Fatalf("AppendHistory: %v", err)
 	}
 
 	// Verify event can be found
@@ -836,5 +823,200 @@ func TestE2E_BuildRawCommandAndHash(t *testing.T) {
 	raw2 := BuildRawCommand("kubectl", []string{"apply", "-f", "my file.yaml"})
 	if !strings.Contains(raw2, `"my file.yaml"`) {
 		t.Errorf("should quote args with spaces: %q", raw2)
+	}
+}
+
+// TestE2E_MCPFieldDeprecationBackwardCompat verifies that old mcp_server/mcp_tool/mcp_args_contain
+// fields in policies.yaml are normalized to tool/action/raw_contains on load, preserving
+// backward compatibility for existing user configs.
+func TestE2E_MCPFieldDeprecationBackwardCompat(t *testing.T) {
+	paths := testPaths(t)
+	os.MkdirAll(paths.Root, 0o755)
+
+	deprecatedYAML := `policies:
+  - name: block-file-delete
+    priority: 100
+    decision: deny
+    match:
+      mcp_server: ["filesystem"]
+      mcp_tool: ["delete_file"]
+  - name: block-destructive-sql
+    priority: 100
+    decision: deny
+    match:
+      mcp_server: ["postgres"]
+      mcp_tool: ["execute_query"]
+      mcp_args_contain: ["DROP"]
+`
+	os.WriteFile(paths.PoliciesPath, []byte(deprecatedYAML), 0o644)
+
+	policies, err := LoadPolicies(paths)
+	if err != nil {
+		t.Fatalf("LoadPolicies: %v", err)
+	}
+	if len(policies) != 2 {
+		t.Fatalf("expected 2 policies, got %d", len(policies))
+	}
+
+	// Verify normalization: deprecated fields cleared, canonical fields populated
+	p0 := policies[0]
+	if len(p0.Match.MCPServer) != 0 || len(p0.Match.MCPTool) != 0 {
+		t.Error("deprecated MCPServer/MCPTool fields should be cleared after normalization")
+	}
+	if len(p0.Match.Tool) == 0 || p0.Match.Tool[0] != "filesystem" {
+		t.Errorf("Tool should contain 'filesystem' after normalizing mcp_server, got %v", p0.Match.Tool)
+	}
+	if len(p0.Match.Action) == 0 || p0.Match.Action[0] != "delete_file" {
+		t.Errorf("Action should contain 'delete_file' after normalizing mcp_tool, got %v", p0.Match.Action)
+	}
+
+	p1 := policies[1]
+	if len(p1.Match.MCPArgsContain) != 0 {
+		t.Error("MCPArgsContain should be cleared after normalization")
+	}
+	if len(p1.Match.RawContains) == 0 || p1.Match.RawContains[0] != "DROP" {
+		t.Errorf("RawContains should contain 'DROP' after normalizing mcp_args_contain, got %v", p1.Match.RawContains)
+	}
+
+	// Verify normalized policies still evaluate correctly against MCP tool call contexts
+	cfg := Config{Mode: ModeEnforce, UnknownEnvDefaultDecision: DecisionAllow}
+
+	mcpCtx := CommandContext{
+		Tool:       "filesystem",
+		Action:     "delete_file",
+		ActionType: "destructive",
+		RawCommand: "filesystem/delete_file",
+	}
+	result := EvaluatePolicies(paths, cfg, policies, mcpCtx)
+	if result.Decision != DecisionDeny {
+		t.Errorf("deprecated policy should match MCP tool call; got %q (policy=%s)", result.Decision, result.PolicyName)
+	}
+	if result.PolicyName != "block-file-delete" {
+		t.Errorf("policy = %q, want block-file-delete", result.PolicyName)
+	}
+
+	sqlCtx := CommandContext{
+		Tool:       "postgres",
+		Action:     "execute_query",
+		ActionType: "write",
+		RawCommand: "postgres/execute_query DROP TABLE users",
+	}
+	result2 := EvaluatePolicies(paths, cfg, policies, sqlCtx)
+	if result2.Decision != DecisionDeny {
+		t.Errorf("deprecated mcp_args_contain should match via raw_contains; got %q (policy=%s)", result2.Decision, result2.PolicyName)
+	}
+}
+
+// TestE2E_NoHistoryFileCreated verifies that history.jsonl is NOT created when events are
+// logged. Rate-limit and require-plan lookups now read from events.jsonl directly.
+func TestE2E_NoHistoryFileCreated(t *testing.T) {
+	paths := testPaths(t)
+	os.MkdirAll(paths.Root, 0o755)
+
+	ev := StartEvent{
+		TS:         time.Now().UTC(),
+		ID:         NewCommandID(),
+		Phase:      "start",
+		Mode:       ModeEnforce,
+		Tool:       "kubectl",
+		Action:     "delete",
+		ActionType: "destructive",
+		Env:        "production",
+		Decision:   DecisionDeny,
+	}
+	if err := AppendEvent(paths, ev); err != nil {
+		t.Fatalf("AppendEvent: %v", err)
+	}
+
+	historyPath := filepath.Join(paths.Root, "history.jsonl")
+	if _, err := os.Stat(historyPath); !os.IsNotExist(err) {
+		t.Error("history.jsonl should not be created; rate-limit reads from events.jsonl now")
+	}
+	if _, err := os.Stat(paths.EventsPath); err != nil {
+		t.Errorf("events.jsonl should exist: %v", err)
+	}
+}
+
+// TestE2E_StartEventContainsActionFields verifies StartEvent now includes action, action_type,
+// and working_dir fields so it can serve as a self-sufficient record for rate-limit lookups.
+func TestE2E_StartEventContainsActionFields(t *testing.T) {
+	paths := testPaths(t)
+	os.MkdirAll(paths.Root, 0o755)
+
+	ev := StartEvent{
+		TS:         time.Now().UTC(),
+		ID:         "ag_action_fields_test",
+		Phase:      "start",
+		Tool:       "terraform",
+		Action:     "apply",
+		ActionType: "write",
+		Env:        "production",
+		WorkingDir: "/opt/tf/prod",
+		Decision:   DecisionAllow,
+	}
+	if err := AppendEvent(paths, ev); err != nil {
+		t.Fatalf("AppendEvent: %v", err)
+	}
+
+	found, err := FindStartEventByID(paths, "ag_action_fields_test")
+	if err != nil {
+		t.Fatalf("FindStartEventByID: %v", err)
+	}
+	if found == nil {
+		t.Fatal("event not found")
+	}
+	if found.Action != "apply" {
+		t.Errorf("Action = %q, want apply", found.Action)
+	}
+	if found.ActionType != "write" {
+		t.Errorf("ActionType = %q, want write", found.ActionType)
+	}
+	if found.WorkingDir != "/opt/tf/prod" {
+		t.Errorf("WorkingDir = %q, want /opt/tf/prod", found.WorkingDir)
+	}
+}
+
+// TestE2E_RateLimitReadsFromEvents verifies that rate-limit policies work correctly by
+// scanning events.jsonl (the former role of the removed history.jsonl).
+func TestE2E_RateLimitReadsFromEvents(t *testing.T) {
+	paths := testPaths(t)
+	os.MkdirAll(paths.Root, 0o755)
+
+	cfg := Config{Mode: ModeEnforce, UnknownEnvDefaultDecision: DecisionAllow}
+	policy := Policy{
+		Name:     "rate-limit-writes",
+		Priority: 100,
+		Decision: DecisionDeny,
+		Match:    PolicyMatch{Tool: []string{"kubectl"}, ActionType: []string{"write"}},
+		RateLimit: &RateLimitRule{Limit: 3, Window: "5m"},
+	}
+	ctx := CommandContext{Tool: "kubectl", Action: "apply", ActionType: "write", Environment: "production"}
+
+	// Under limit: no prior events → allow
+	result := EvaluatePolicies(paths, cfg, []Policy{policy}, ctx)
+	if result.Decision != DecisionAllow {
+		t.Errorf("under limit: expected allow, got %q", result.Decision)
+	}
+
+	// Write 3 matching start events to events.jsonl
+	for i := 0; i < 3; i++ {
+		ev := StartEvent{
+			TS:         time.Now().Add(-time.Duration(i) * time.Minute),
+			Phase:      "start",
+			Tool:       "kubectl",
+			Action:     "apply",
+			ActionType: "write",
+			Env:        "production",
+		}
+		b, _ := json.Marshal(ev)
+		f, _ := os.OpenFile(paths.EventsPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+		f.Write(append(b, '\n'))
+		f.Close()
+	}
+
+	// Over limit: 3 events in window → deny
+	result2 := EvaluatePolicies(paths, cfg, []Policy{policy}, ctx)
+	if result2.Decision != DecisionDeny {
+		t.Errorf("over limit: expected deny, got %q (policy=%s)", result2.Decision, result2.PolicyName)
 	}
 }

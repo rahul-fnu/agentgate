@@ -88,8 +88,8 @@ policies:
     decision: deny
     suggestion: "File deletion through MCP is blocked."
     match:
-      mcp_server: ["filesystem"]
-      mcp_tool: ["delete_file", "remove_file"]
+      tool: ["filesystem"]
+      action: ["delete_file", "remove_file"]
 
   # Block destructive SQL through MCP
   - name: block-mcp-destructive-sql
@@ -97,9 +97,9 @@ policies:
     decision: deny
     suggestion: "Destructive SQL operations are blocked."
     match:
-      mcp_server: ["postgres"]
-      mcp_tool: ["execute_query"]
-      mcp_args_contain: ["DROP", "TRUNCATE", "DELETE FROM"]
+      tool: ["postgres"]
+      action: ["execute_query"]
+      raw_contains: ["DROP", "TRUNCATE", "DELETE FROM"]
 
   # Rate-limit database writes
   - name: rate-limit-mcp-db-writes
@@ -107,9 +107,9 @@ policies:
     decision: deny
     suggestion: "Too many database write operations."
     match:
-      mcp_server: ["postgres"]
-      mcp_tool: ["execute_query"]
-      mcp_args_contain: ["INSERT", "UPDATE", "DELETE"]
+      tool: ["postgres"]
+      action: ["execute_query"]
+      raw_contains: ["INSERT", "UPDATE", "DELETE"]
     rate_limit:
       limit: 10
       window: 5m
@@ -179,9 +179,9 @@ MCP tool calls are mapped to the policy engine as follows:
 
 | MCP Concept | Policy Field | Example |
 |-------------|-------------|---------|
-| Server name | `mcp_server` or `tool` | `["filesystem"]` |
-| Tool name | `mcp_tool` or `action` | `["delete_file"]` |
-| Arguments | `mcp_args_contain` | `["DROP", "/etc"]` |
+| Server name | `tool` | `["filesystem"]` |
+| Tool name | `action` | `["delete_file"]` |
+| Arguments | `raw_contains` | `["DROP", "/etc"]` |
 | Tool classification | `action_type` | `["destructive"]` |
 
 Tool names are automatically classified:
@@ -258,9 +258,9 @@ policies:
     decision: deny
     suggestion: "Schema changes through MCP are not allowed."
     match:
-      mcp_server: ["postgres", "mysql"]
-      mcp_tool: ["execute_query"]
-      mcp_args_contain: ["CREATE TABLE", "ALTER TABLE", "DROP TABLE", "CREATE INDEX"]
+      tool: ["postgres", "mysql"]
+      action: ["execute_query"]
+      raw_contains: ["CREATE TABLE", "ALTER TABLE", "DROP TABLE", "CREATE INDEX"]
 
   # Block mass deletes
   - name: no-mass-delete
@@ -268,18 +268,18 @@ policies:
     decision: deny
     suggestion: "Mass DELETE operations are blocked."
     match:
-      mcp_server: ["postgres"]
-      mcp_tool: ["execute_query"]
-      mcp_args_contain: ["DELETE FROM"]
+      tool: ["postgres"]
+      action: ["execute_query"]
+      raw_contains: ["DELETE FROM"]
 
   # Allow SELECT queries
   - name: allow-select
     priority: 80
     decision: allow
     match:
-      mcp_server: ["postgres"]
-      mcp_tool: ["execute_query"]
-      mcp_args_contain: ["SELECT"]
+      tool: ["postgres"]
+      action: ["execute_query"]
+      raw_contains: ["SELECT"]
 ```
 
 ## Limitations

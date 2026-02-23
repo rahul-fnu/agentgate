@@ -123,15 +123,6 @@ func policyMatchesContext(match PolicyMatch, ctx CommandContext) bool {
 	if len(match.RawContains) > 0 && !anyMatch(match.RawContains, ctx.RawCommand) {
 		return false
 	}
-	if len(match.MCPServer) > 0 && !anyMatch(match.MCPServer, ctx.Tool) {
-		return false
-	}
-	if len(match.MCPTool) > 0 && !anyMatch(match.MCPTool, ctx.Action) {
-		return false
-	}
-	if len(match.MCPArgsContain) > 0 && !anyMatch(match.MCPArgsContain, ctx.RawCommand) {
-		return false
-	}
 	return true
 }
 
@@ -208,7 +199,7 @@ func hasRecentHistory(paths Paths, since time.Time, match func(HistoryRecord) bo
 }
 
 func scanHistory(paths Paths, since time.Time, fn func(HistoryRecord)) error {
-	f, err := os.Open(paths.HistoryPath)
+	f, err := os.Open(paths.EventsPath)
 	if err != nil {
 		return nil
 	}
@@ -219,14 +210,26 @@ func scanHistory(paths Paths, since time.Time, fn func(HistoryRecord)) error {
 		if line == "" {
 			continue
 		}
-		var r HistoryRecord
-		if err := json.Unmarshal([]byte(line), &r); err != nil {
+		var ev StartEvent
+		if err := json.Unmarshal([]byte(line), &ev); err != nil {
 			continue
 		}
-		if r.TS.Before(since) {
+		if ev.Phase != "start" {
 			continue
 		}
-		fn(r)
+		if ev.TS.Before(since) {
+			continue
+		}
+		fn(HistoryRecord{
+			TS:         ev.TS,
+			ID:         ev.ID,
+			Tool:       ev.Tool,
+			Action:     ev.Action,
+			ActionType: ev.ActionType,
+			Env:        ev.Env,
+			WorkingDir: ev.WorkingDir,
+			Decision:   ev.Decision,
+		})
 	}
 	return nil
 }

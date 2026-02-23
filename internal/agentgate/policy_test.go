@@ -17,7 +17,6 @@ func testPaths(t *testing.T) Paths {
 		ConfigPath:   filepath.Join(dir, "config.yaml"),
 		PoliciesPath: filepath.Join(dir, "policies.yaml"),
 		EventsPath:   filepath.Join(dir, "events.jsonl"),
-		HistoryPath:  filepath.Join(dir, "history.jsonl"),
 		BypassesPath: filepath.Join(dir, "bypasses.jsonl"),
 		CachePath:    filepath.Join(dir, "cache.json"),
 		EventsLock:   filepath.Join(dir, ".events.lock"),
@@ -256,17 +255,18 @@ func TestEvaluatePolicies_RateLimit(t *testing.T) {
 		},
 	}
 
-	// Write 3 history records
+	// Write 3 start events
 	for i := 0; i < 3; i++ {
-		rec := HistoryRecord{
+		ev := StartEvent{
 			TS:         time.Now().Add(-time.Duration(i) * time.Minute),
+			Phase:      "start",
 			Tool:       "kubectl",
 			Action:     "apply",
 			ActionType: "write",
 			Env:        "production",
 		}
-		b, _ := json.Marshal(rec)
-		f, _ := os.OpenFile(paths.HistoryPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+		b, _ := json.Marshal(ev)
+		f, _ := os.OpenFile(paths.EventsPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
 		f.Write(append(b, '\n'))
 		f.Close()
 	}
@@ -299,9 +299,10 @@ func TestEvaluatePolicies_RequirePlan(t *testing.T) {
 		t.Errorf("require-plan without recent plan should deny, got %q", result.Decision)
 	}
 
-	// Add a recent plan
-	rec := HistoryRecord{
+	// Add a recent plan event
+	planEv := StartEvent{
 		TS:         time.Now().Add(-30 * time.Minute),
+		Phase:      "start",
 		Tool:       "terraform",
 		Action:     "plan",
 		ActionType: "other",
@@ -309,8 +310,8 @@ func TestEvaluatePolicies_RequirePlan(t *testing.T) {
 		WorkingDir: "/opt/tf",
 		Decision:   DecisionAllow,
 	}
-	b, _ := json.Marshal(rec)
-	os.WriteFile(paths.HistoryPath, append(b, '\n'), 0o644)
+	b, _ := json.Marshal(planEv)
+	os.WriteFile(paths.EventsPath, append(b, '\n'), 0o644)
 
 	result = EvaluatePolicies(paths, cfg, []Policy{policy}, ctx)
 	if result.Decision != DecisionAllow {
