@@ -317,19 +317,4 @@ const starterPoliciesYAML = `policies:
       tool: [bash, sh]
       raw_contains: ["| sh", "|sh", "| bash", "|bash", "| zsh", "|zsh"]
 
-  - name: confirm-bash-rm
-    priority: 90
-    decision: confirm
-    suggestion: "File deletion via bash requires confirmation."
-    match:
-      tool: [bash, sh]
-      action: [rm]
-
-  - name: warn-bash-network
-    priority: 80
-    decision: warn
-    suggestion: "Network command via bash detected."
-    match:
-      tool: [bash, sh]
-      action: [curl, wget]
 `
